@@ -3,52 +3,39 @@ import {StyleSheet, Text, View, Image, Slider} from 'react-native';
 import {Foundation} from '@expo/vector-icons';
 import CustomButton from "./src/components/ui/CustomButton";
 import {Audio} from 'expo-av'
-
-const playList = [
+import DeezerChart from "./src/components/DeezerChart";
+let playList = localPlayList
+const localPlayList = [
     {
-        title: 'Hamlet - Act I',
-        author: 'William Shakespeare',
-        source: 'Librivox',
-        // uri:
-        //     'https://ia800204.us.archive.org/11/items/hamlet_0911_librivox/hamlet_act1_shakespeare.mp3',
-        uri:
-            'https://s3.amazonaws.com/exp-us-standard/audio/playlist-example/Podington_Bear_-_Rubber_Robot.mp3',
-        imageSource: 'http://www.archive.org/download/LibrivoxCdCoverArt8/hamlet_1104.jpg'
+        title: 'Local song 1',
+        uri: require('./assets/music/1.mp3'),
+        imgSrc: require('./assets/music/icon-music.png')
     },
     {
-        title: 'Hamlet - Act II',
-        author: 'William Shakespeare',
-        source: 'Librivox',
-        uri:
-            'https://ia600204.us.archive.org/11/items/hamlet_0911_librivox/hamlet_act2_shakespeare.mp3',
-        imageSource: 'http://www.archive.org/download/LibrivoxCdCoverArt8/hamlet_1104.jpg'
+        title: 'Local song 2',
+        uri: require('./assets/music/2.mp3'),
+        imgSrc: require('./assets/music/icon-music.png')
     },
     {
-        title: 'Hamlet - Act III',
-        author: 'William Shakespeare',
-        source: 'Librivox',
-        uri: 'http://www.archive.org/download/hamlet_0911_librivox/hamlet_act3_shakespeare.mp3',
-        imageSource: 'http://www.archive.org/download/LibrivoxCdCoverArt8/hamlet_1104.jpg'
+        title: 'Local song 3',
+        uri: require('./assets/music/3.mp3'),
+        imgSrc: require('./assets/music/icon-music.png')
     },
     {
-        title: 'Hamlet - Act IV',
-        author: 'William Shakespeare',
-        source: 'Librivox',
-        uri:
-            'https://ia800204.us.archive.org/11/items/hamlet_0911_librivox/hamlet_act4_shakespeare.mp3',
-        imageSource: 'http://www.archive.org/download/LibrivoxCdCoverArt8/hamlet_1104.jpg'
+        title: 'Local song 4',
+        uri: require('./assets/music/4.mp3'),
+        imgSrc: require('./assets/music/icon-music.png')
     },
     {
-        title: 'Hamlet - Act V',
-        author: 'William Shakespeare',
-        source: 'Librivox',
-        uri:
-            'https://ia600204.us.archive.org/11/items/hamlet_0911_librivox/hamlet_act5_shakespeare.mp3',
-        imageSource: 'http://www.archive.org/download/LibrivoxCdCoverArt8/hamlet_1104.jpg'
+        title: 'Local song 5',
+        uri: require('./assets/music/5.mp3'),
+        imgSrc: require('./assets/music/icon-music.png')
     }
 ]
 
 const App = () => {
+    let [local, setLocal] = useState(true)
+    let [deezer, setDeezer] = useState(true)
     const [state, setState] = useState({position: 0, duration: 1})
     let [progress, setProgress] = useState(0)
     let [volume, setVolume] = useState(1.0)
@@ -57,11 +44,14 @@ const App = () => {
     let [isPlaying, setIsPlaying] = useState(false)
     let [currentIndex, setCurrentIndex] = useState(0)
 
-    const loadSong = async () => {
+    const loadSong = async (local) => {
         try {
             const playbackInstance = new Audio.Sound()
-            const source = {
-                uri: playList[currentIndex].uri
+            let source;
+            if (local) {
+                source = playList[currentIndex].uri
+            } else {
+                source = {uri: playList[currentIndex].uri}
             }
 
             const status = {
@@ -131,9 +121,9 @@ const App = () => {
         setIsPlaying((isPlaying) => !isPlaying)
     }
     const handleStop = async () => {
-        if (isPlaying) {
+        if (playbackInstance) {
             await playbackInstance.stopAsync()
-            setIsPlaying((isPlaying) => !isPlaying)
+            setIsPlaying(false)
             setProgress(0)
             setState({position: 0, duration: 1})
         }
@@ -143,13 +133,11 @@ const App = () => {
         if (playbackInstance) {
             setLoading(true)
             await playbackInstance.unloadAsync()
-            currentIndex < playList.length - 1 ? (currentIndex -= 1) : (currentIndex = 0)
+            currentIndex > 0 && currentIndex < playList.length - 1 ? (currentIndex -= 1) : (currentIndex = 0)
             setCurrentIndex(
                 currentIndex
             )
-            loadSong().then( ()=> setLoading(false))
-
-
+            loadSong(local).then(() => setLoading(false))
         }
     }
 
@@ -161,14 +149,47 @@ const App = () => {
             setCurrentIndex(
                 currentIndex
             )
-            loadSong().then( ()=> setLoading(false))
-
+            loadSong(local).then(() => setLoading(false))
         }
+    }
+
+    const openInPlayer = (newPlayList) => {
+        playList = newPlayList
+        setLocal(
+            false
+        )
+        setLoading(true)
+        setDeezer(false)
+        loadSong(false).then(() => setLoading(false))
+    }
+
+    const useLocal = () => {
+        setLoading(true)
+        playList = localPlayList
+        setLocal(
+            true
+        )
+        setDeezer(false)
+        loadSong(true).then(() => setLoading(false))
+    }
+
+    const backToDeezer = async () => {
+
+        if (playbackInstance) {
+            await playbackInstance.unloadAsync()
+            setIsPlaying(false)
+            setProgress(0)
+            setState({position: 0, duration: 1})
+        }
+        setCurrentIndex(
+            0
+        )
+        setDeezer(true)
     }
 
     useEffect(() => {
         const setSettings = async () => {
-            const response = await Audio.setAudioModeAsync({
+            await Audio.setAudioModeAsync({
                 allowsRecordingIOS: false,
                 interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
                 playsInSilentModeIOS: true,
@@ -177,52 +198,59 @@ const App = () => {
                 staysActiveInBackground: true,
                 playThroughEarpieceAndroid: true
             })
-            await loadSong(currentIndex, isPlaying).then(() => setLoading(false))
+            // await loadSong().then(() => setLoading(false))
         }
         setSettings();
 
     }, [])
 
+    if (deezer) {
+        return <DeezerChart openInPlayer={openInPlayer} useLocal={useLocal}/>
+    }
 
     return (
+
         <View style={styles.container}>
-            <Image style={styles.songImg}
-                   source={{uri: 'http://www.archive.org/download/LibrivoxCdCoverArt8/hamlet_1104.jpg'}}/>
+            {local ? <Image style={styles.songImg} source={playList[currentIndex].imgSrc}/> :
+                <Image style={styles.songImg} source={{uri: playList[currentIndex].imgSrc}}/>}
             <Text style={styles.title}>{playList[currentIndex].title}</Text>
             <Text style={styles.title}>{loading ? (
                 'BUFFERING...'
             ) : (
                 _getTimestamp()
             )}</Text>
-            {loading ? <Text>loading...</Text> :
+            {loading ? <Text style={styles.loading}>loading...</Text> :
                 <View style={styles.controls}>
-                    <CustomButton onPress={handlePreviousTrack}>
+                    <CustomButton style={styles.control} onPress={handlePreviousTrack}>
                         <Foundation name="previous" size={36} color="black"/>
                     </CustomButton>
-                    <CustomButton onPress={handlePlayPause}>
+                    <CustomButton style={styles.control} onPress={handlePlayPause}>
                         {isPlaying ? <Foundation name="pause" size={36} color="black"/> :
                             <Foundation name="play" size={36} color="black"/>}
                     </CustomButton>
-                    <CustomButton onPress={handleStop}>
+                    <CustomButton style={styles.control} onPress={handleStop}>
                         <Foundation name="stop" size={36} color="black"/>
                     </CustomButton>
-                    <CustomButton onPress={handleNextTrack}>
+                    <CustomButton style={styles.control} onPress={handleNextTrack}>
                         <Foundation name="next" size={36} color="black"/>
                     </CustomButton>
 
                 </View>
             }
-<View style={styles.progress}>
-            <Slider style={styles.slider} minimumValue={0} value={progress}
-                    maximumValue={100} step={1} onValueChange={handlerSliderChange}/>
-</View>
+
+            <View style={styles.progress}>
+                <Slider style={styles.slider} minimumValue={0} value={progress}
+                        maximumValue={100} step={1} onValueChange={handlerSliderChange}/>
+            </View>
             <View style={styles.volume}>
                 <Foundation name="volume-none" size={36} color="black"/>
                 <Slider style={styles.slider} minimumValue={0} value={volume}
                         maximumValue={1} step={0.05} onValueChange={handlerVolumeChange}/>
                 <Foundation name="volume" size={36} color="black"/>
             </View>
+            <CustomButton onPress={backToDeezer}>back to deezer</CustomButton>
         </View>
+
     )
 }
 
@@ -234,6 +262,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
 
+    },
+    loading: {
+        fontSize: 30,
+        color: 'red'
     },
     songImg: {
         width: 300,
@@ -247,6 +279,10 @@ const styles = StyleSheet.create({
     controls: {
         flexDirection: 'row',
         marginBottom: 20
+    },
+    control: {
+        width: 70,
+        margin: 5
     },
     progress: {
         marginBottom: 20

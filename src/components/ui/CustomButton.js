@@ -1,10 +1,10 @@
 import React from 'react'
 import {StyleSheet, View, Text, TouchableOpacity} from 'react-native'
 
-const CustomButton = ({children, onPress, color = 'transparent'}) => {
+const CustomButton = ({children, onPress, style}) => {
     return (
-        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-            <View style={{...styles.button, backgroundColor: color}}>
+        <TouchableOpacity onPress={onPress} activeOpacity={0.5}>
+            <View style={{...styles.button, ...style}}>
                 <Text style={styles.text}>{children}</Text>
             </View>
         </TouchableOpacity>
@@ -24,7 +24,9 @@ const styles = StyleSheet.create({
         margin: 3
     },
     text: {
-        color: '#000'
+        color: '#000',
+        fontSize: 18,
+
     }
 })
 
